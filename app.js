@@ -257,22 +257,3 @@ app.get(
 );
 
 module.exports = app;
-
-/*
-for (let eachuser of userFollowingPeopleQueryResponse) {
-    const getUserNameQuery = `SELECT username FROM user WHERE user_id=${eachuser.following_user_id};`;
-    const username = await database.get(getUserNameQuery);
-    const getUserTweetAndDatetimeQuery = `SELECT tweet,date_time FROM tweet WHERE user_id=${eachuser.following_user_id} ORDER BY date_time DESC;`;
-    const response = await database.all(getUserTweetAndDatetimeQuery);
-    for (let eachitem of response) {
-      let object = {
-        username: username.username,
-        tweet: eachitem.tweet,
-        dateTime: eachitem.date_time,
-      };
-      responseList.push(object);
-    }
-  }
-  response.status(200);
-  response.send(responseList.splice(0, 4));
-*/
