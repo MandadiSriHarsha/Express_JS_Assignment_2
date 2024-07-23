@@ -167,33 +167,10 @@ app.get("/user/tweets/feed/", authenticateToken, async (request, response) => {
   const { username } = request;
   const getUserIdQuery = `SELECT user_id FROM user WHERE username='${username}';`;
   const { user_id } = await database.get(getUserIdQuery);
-  const userFollowingPeopleQuery = `SELECT following_user_id FROM follower WHERE follower_user_id=${user_id};`;
-  const userFollowingPeopleQueryResponse = await database.all(
-    userFollowingPeopleQuery
-  );
-  let tweetsUsersIds = [];
-  for (let eachuser of userFollowingPeopleQueryResponse) {
-    tweetsUsersIds.push(eachuser.following_user_id);
-  }
-  const tableName = username + "api3";
-  const createTableQuery = `CREATE TABLE '${tableName}'(username TEXT,tweet TEXT,dateTime DATETIME);`;
-  await database.run(createTableQuery);
-  for (let eachitem of tweetsUsersIds) {
-    const getUsernameQuery = `SELECT username FROM user WHERE user_id=${eachitem};`;
-    const { username } = await database.get(getUsernameQuery);
-    const getTweetsQuery = `SELECT username,tweet,date_time FROM user NATURAL JOIN tweet WHERE username='${username}';`;
-    const result = await database.all(getTweetsQuery);
-    for (let eachitem of result) {
-      const putDataQuery = `INSERT INTO '${tableName}'(username,tweet,dateTime) VALUES('${eachitem.username}','${eachitem.tweet}','${eachitem.date_time}');`;
-      await database.run(putDataQuery);
-    }
-  }
-  const responseList = await database.all(
-    `SELECT * FROM '${tableName}' ORDER BY dateTime DESC LIMIT 4 OFFSET 0;`
-  );
-  const result = responseList;
-  await database.run(`DROP TABLE '${tableName}'`);
-  response.send(result);
+  const getTweetsFeedQuery = `SELECT username,tweet.tweet,tweet.date_time AS dateTime FROM (tweet INNER JOIN follower ON follower.following_user_id=tweet.user_id) AS T INNER JOIN user ON T.following_user_id=user.user_id WHERE T.follower_user_id=${user_id}; LIMIT 4 OFFSET 0`;
+  const databaseResponse = await database.all(getTweetsFeedQuery);
+  response.status(200);
+  response.send(databaseResponse);
 });
 
 //API-6
