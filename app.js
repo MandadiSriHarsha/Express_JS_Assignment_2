@@ -156,30 +156,10 @@ app.get("/user/tweets/", authenticateToken, async (request, response) => {
   const { username } = request;
   const getUserIdQuery = `SELECT * FROM user WHERE username='${username}';`;
   const { user_id } = await database.get(getUserIdQuery);
-  const getTweetIdsQuery = `SELECT tweet_id FROM tweet WHERE user_id=${user_id};`;
-  const tweetIds = await database.all(getTweetIdsQuery);
-  let responseList = [];
-  for (let eachtweet of tweetIds) {
-    const getTweetQuery = `SELECT tweet FROM tweet WHERE tweet_id=${eachtweet.tweet_id};`;
-    const { tweet } = await database.get(getTweetQuery);
-    const tweetDateQuery = `SELECT date_time FROM tweet WHERE tweet_id=${eachtweet.tweet_id};`;
-    const { date_time } = await database.get(tweetDateQuery);
-    const replyCountQuery = `SELECT COUNT(*) FROM reply WHERE tweet_id=${eachtweet.tweet_id};`;
-    const replies = await database.all(replyCountQuery);
-    const tweet_replies = replies[0]["COUNT(*)"];
-    const likeCountQuery = `SELECT COUNT(*) FROM like WHERE tweet_id=${eachtweet.tweet_id};`;
-    const likes = await database.all(likeCountQuery);
-    const tweet_likes = likes[0]["COUNT(*)"];
-    let resultObject = {
-      tweet: tweet,
-      likes: tweet_likes,
-      replies: tweet_replies,
-      dateTime: date_time,
-    };
-    responseList.push(resultObject);
-  }
+  const getTweetsStatsQuery = `SELECT tweet.tweet AS tweet,COUNT(like.like_id) AS likes, COUNT(reply.reply) AS replies, COUNT(like.like_id) AS likes, tweet.date_time AS dateTime FROM (tweet INNER JOIN like ON tweet.tweet_id=like.tweet_id) AS T INNER JOIN reply ON T.tweet_id=reply.tweet_id WHERE tweet.user_id=${user_id} GROUP BY tweet.tweet;`;
+  const databaseResponse = await database.all(getTweetsStatsQuery);
   response.status(200);
-  response.send(responseList);
+  response.send(databaseResponse);
 });
 
 //API-3
