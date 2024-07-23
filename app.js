@@ -199,36 +199,14 @@ app.get(
     let userName = username;
     const { tweetId } = request.params;
     const getUserIdQuery = `SELECT user_id FROM user WHERE username='${username}';`;
-    const { user_id } = await database.get(getUserIdQuery);
-    const getUserFollowingPeopleQuery = `SELECT following_user_id FROM follower WHERE follower_user_id=${user_id};`;
-    const getUserFollowingPeopleQueryResponse = await database.all(
-      getUserFollowingPeopleQuery
-    );
-    let userFollowingPeopleIds = [];
-    for (let eachitem of getUserFollowingPeopleQueryResponse) {
-      userFollowingPeopleIds.push(eachitem.following_user_id);
-    }
-    const getTweetPostedUserIdQuery = `SELECT user_id FROM tweet WHERE tweet_id=${tweetId};`;
-    const getTweetPostedUserIdQueryResponse = await database.get(
-      getTweetPostedUserIdQuery
-    );
-    const isIdValid = userFollowingPeopleIds.includes(
-      getTweetPostedUserIdQueryResponse.user_id
-    );
-    if (isIdValid) {
-      const getUserLikesIdsQuery = `SELECT user_id FROM like WHERE tweet_id=${tweetId};`;
-      const getUserLikesIdsResponse = await database.all(getUserLikesIdsQuery);
-      let userNames = [];
-      for (let eachuser of getUserLikesIdsResponse) {
-        const getNameQuery = `SELECT username FROM user WHERE user_id=${eachuser.user_id};`;
-        const { username } = await database.get(getNameQuery);
-        userNames.push(username);
-      }
-      response.status(200);
-      response.send({ likes: userNames });
-    } else {
+    const getTweetQuery = `SELECT DISTINCT username FROM ((follower INNER JOIN tweet ON follower.following_user_id=tweet.user_id) AS T INNER JOIN like ON like.tweet_id=T.tweet_id) AS TT INNER JOIN user ON user.user_id=like.user_id WHERE follower.follower_user_id=${user_id} AND tweet.tweet_id=${tweetId};`;
+    const databaseResponse = await database.all(getTweetQuery);
+    if (databaseResponse === undefined || databaseResponse.length == 0) {
       response.status(401);
       response.send("Invalid Request");
+    } else {
+      response.status(200);
+      response.send(databaseResponse);
     }
   }
 );
