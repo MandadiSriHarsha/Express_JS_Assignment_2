@@ -134,17 +134,10 @@ app.get("/user/following/", authenticateToken, async (request, response) => {
   const { username } = request;
   const getUserIdQuery = `SELECT user_id FROM user WHERE username='${username}';`;
   const { user_id } = await database.get(getUserIdQuery);
-  const userFollowingPeopleQuery = `SELECT following_user_id FROM follower WHERE follower_user_id=${user_id};`;
-  const userFollowingPeopleQueryResponse = await database.all(
-    userFollowingPeopleQuery
-  );
-  let responseList = [];
-  for (let eachuser of userFollowingPeopleQueryResponse) {
-    let getEachUserQuery = `SELECT name FROM user WHERE user_id=${eachuser.following_user_id};`;
-    responseList.push(await database.get(getEachUserQuery));
-  }
+  const userFollowingPeopleQuery = `SELECT name FROM follower INNER JOIN user ON follower.following_user_id=user.user_id WHERE follower_user_id=${user_id};`;
+  const databaseResponse = await database.all(userFollowingPeopleQuery);
   response.status(200);
-  response.send(responseList);
+  response.send(databaseResponse);
 });
 
 //API-5
