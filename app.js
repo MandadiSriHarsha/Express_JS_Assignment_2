@@ -145,17 +145,10 @@ app.get("/user/followers/", authenticateToken, async (request, response) => {
   let { username } = request;
   let getUserIdQuery = `SELECT user_id FROM user WHERE username='${username}';`;
   const { user_id } = await database.get(getUserIdQuery);
-  const peopleFollowingUserQuery = `SELECT follower_user_id FROM follower WHERE following_user_id=${user_id};`;
-  const peopleFollowingUserQueryResponse = await database.all(
-    peopleFollowingUserQuery
-  );
-  let responseList = [];
-  for (let eachuser of peopleFollowingUserQueryResponse) {
-    let getEachUserQuery = `SELECT name FROM user WHERE user_id=${eachuser.follower_user_id};`;
-    responseList.push(await database.get(getEachUserQuery));
-  }
+  const userFollowingPeopleQuery = `SELECT name FROM follower INNER JOIN user ON follower.follower_user_id=user.user_id WHERE following_user_id=${user_id};`;
+  const databaseResponse = await database.all(userFollowingPeopleQuery);
   response.status(200);
-  response.send(responseList);
+  response.send(databaseResponse);
 });
 
 //API-9
